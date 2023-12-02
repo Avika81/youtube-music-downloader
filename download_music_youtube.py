@@ -6,7 +6,7 @@ import json
 import os
 from pathlib import Path
 
-def youtube2mp3(url, outdir):
+def youtube2mp3(url: str, outdir: str) -> None:
     yt = YouTube(url)
     try:
         video = yt.streams.filter(only_audio=True).first()
@@ -14,7 +14,7 @@ def youtube2mp3(url, outdir):
         print(f'Failed downloading: {url} - {yt.title}')
         return
     destination = outdir or '.'
-    video.download(output_path=destination, filename=f'{yt.author} - {yt.title}.mp4'.replace('?', '').replace('|', '-'))
+    video.download(output_path=destination, filename=f'{yt.author} - {yt.title}.mp4'.replace('?', '').replace('|', '-').replace('/', '-'))
 
 
 def all_urls_from_youtube_playlist(url_playlist):
