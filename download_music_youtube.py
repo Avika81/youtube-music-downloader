@@ -1,13 +1,17 @@
-import joblib
-from multiprocessing import Pool, TimeoutError
-from threading import Thread
 from pytube import YouTube
 from pytube import Playlist
 from pathlib import Path
 
-memory = joblib.Memory('./.cache', verbose=0)
 
-def _youtube2mp3(url: str, outdir: str) -> None:
+def yt_to_filename(yt):
+    return (
+        f"{yt.author} - {yt.title}.mp4".replace("?", "")
+        .replace("|", "-")
+        .replace("/", "-")
+    )
+
+
+def youtube2mp3(url: str, outdir: str) -> None:
     yt = YouTube(url)
     try:
         video = yt.streams.filter(only_audio=True).first()
@@ -15,13 +19,13 @@ def _youtube2mp3(url: str, outdir: str) -> None:
         print(f"Failed downloading: {url} - {yt.title}")
         return
     destination = outdir or "."
-    filename = f"{yt.author} - {yt.title}.mp4".replace("?", "").replace("|", "-").replace("/", "-")
+    filename = yt_to_filename(yt=yt)
     video.download(
         output_path=destination,
         filename=filename,
     )
     return filename
-youtube2mp3 = memory.cache(_youtube2mp3)
+
 
 def all_urls_from_youtube_playlist(url_playlist):
     playlist = Playlist(url_playlist)
