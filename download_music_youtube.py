@@ -4,14 +4,15 @@ from pathlib import Path
 
 
 def yt_to_filename(yt):
-    title = yt.title 
-    if '-' not in title and 'Topic' in yt.author:
-        title = f'{yt.author} - {title}'.replace(' - Topic','')
-        
+    title = yt.title
+    if "-" not in title and "Topic" in yt.author:
+        title = f"{yt.author} - {title}".replace(" - Topic", "")
+
     return (
         f"{title}.mp4".replace("?", "")
         .replace("|", "-")
-        .replace("/", "-").replace('\\', '-')
+        .replace("/", "-")
+        .replace("\\", "-")
     )
 
 
