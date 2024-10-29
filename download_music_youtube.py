@@ -1,13 +1,17 @@
-from pytube import YouTube
-from pytube import Playlist
+from pytubefix import YouTube
+from pytubefix import Playlist
 from pathlib import Path
 
 
 def yt_to_filename(yt):
+    title = yt.title 
+    if '-' not in title and 'Topic' in yt.author:
+        title = f'{yt.author} - {title}'.replace(' - Topic','')
+        
     return (
-        f"{yt.author} - {yt.title}.mp4".replace("?", "")
+        f"{title}.mp4".replace("?", "")
         .replace("|", "-")
-        .replace("/", "-")
+        .replace("/", "-").replace('\\', '-')
     )
 
 
@@ -15,9 +19,9 @@ def youtube2mp3(url: str, outdir: str) -> None:
     yt = YouTube(url)
     try:
         video = yt.streams.filter(only_audio=True).first()
-    except:
+    except Exception:
         print(f"Failed downloading: {url} - {yt.title}")
-        return
+        raise
     destination = outdir or "."
     filename = yt_to_filename(yt=yt)
     video.download(
