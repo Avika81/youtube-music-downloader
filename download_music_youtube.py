@@ -13,6 +13,8 @@ def yt_to_filename(yt):
         .replace("|", "-")
         .replace("/", "-")
         .replace("\\", "-")
+        .replace(":", " -")
+        .replace("*", "")
     )
 
 
@@ -28,6 +30,7 @@ def youtube2mp3(url: str, outdir: str) -> None:
     video.download(
         output_path=destination,
         filename=filename,
+        timeout=3,
     )
     return filename
 
