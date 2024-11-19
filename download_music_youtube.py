@@ -1,6 +1,11 @@
+import functools
+from multiprocessing import Pool
 from pytubefix import YouTube
 from pytubefix import Playlist
 from pathlib import Path
+import os
+
+import tqdm
 
 
 def yt_to_filename(yt):
@@ -35,7 +40,36 @@ def youtube2mp3(url: str, outdir: str) -> None:
     return filename
 
 
-def all_urls_from_youtube_playlist(url_playlist):
+def remove_old(songs_to_download, outdir: str) -> None:
+    for f in [
+        os.path.join(outdir, name)
+        for name in os.listdir(outdir)
+        if name not in songs_to_download.values()
+    ]:
+        os.remove(f)
+
+
+def missing(songs_to_download, outdir: str) -> dict:
+    ldir = os.listdir(outdir)
+    return {url: name for url, name in songs_to_download.items() if name not in ldir}
+
+
+def sync_from_json(songs_dict: dict[str, str], outdir: str):
+    remove_old(songs_dict, outdir=outdir)
+    new_songs = missing(songs_dict, outdir=outdir)
+    with Pool(processes=16) as pool:
+        res = pool.imap_unordered(
+            functools.partial(youtube2mp3, outdir=outdir), new_songs.keys()
+        )
+
+        for _ in tqdm.tqdm(res, total=len(new_songs)):
+            pass
+    remaining = missing(songs_dict, outdir=outdir)
+    assert not remaining, f"Failed to download everything, missing: f{remaining}"
+
+
+# The URL api was Not tested recently (use with caution):
+def all_urls_from_youtube_playlist(url_playlist: list[str]):
     playlist = Playlist(url_playlist)
     print("Number Of Videos In playlist: %s" % len(playlist.video_urls))
 
@@ -46,7 +80,7 @@ def all_urls_from_youtube_playlist(url_playlist):
     return urls
 
 
-def download_playlist(url, outdir):
+def download_playlist(url, outdir: str):
     for songs_url in all_urls_from_youtube_playlist(url):
         dest_dir = Path(outdir) / Playlist(url).title
         try:
