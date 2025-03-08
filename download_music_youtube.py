@@ -41,7 +41,7 @@ def retry(f, attempts: int = 10):
                 return f(*args, **kwargs)
             except Exception as e:
                 print(f"Failed: {f} - {args} {kwargs} - {repr(e)}")
-                time.sleep(10)
+                time.sleep(randint(0, 20))
         raise Exception(f"Failed: {f} - {args} {kwargs}")
 
     return inner
