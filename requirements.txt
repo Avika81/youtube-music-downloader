@@ -1,4 +1,4 @@
-pytube
+pytubefix
 m3u-maker
-json
+mutagen
 pathlib

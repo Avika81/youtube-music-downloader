@@ -3,9 +3,16 @@ from multiprocessing import Pool
 from pytubefix import YouTube
 from pytubefix import Playlist
 from pathlib import Path
+import mutagen
 import os
-
+import os
 import tqdm
+
+
+def add_tag(file, yt):
+    media_file = mutagen.File(file, easy=True)
+    media_file["artist"] = yt.author
+    media_file.save()
 
 
 def yt_to_filename(yt):
@@ -24,7 +31,7 @@ def yt_to_filename(yt):
 
 
 def youtube2mp3(url: str, outdir: str) -> None:
-    yt = YouTube(url)
+    yt = YouTube(url, use_po_token=True)
     try:
         video = yt.streams.filter(only_audio=True).first()
     except Exception:
@@ -37,6 +44,7 @@ def youtube2mp3(url: str, outdir: str) -> None:
         filename=filename,
         timeout=3,
     )
+    add_tag(filename, yt)
     return filename
 
 
@@ -68,7 +76,7 @@ def sync_from_json(songs_dict: dict[str, str], outdir: str):
     assert not remaining, f"Failed to download everything, missing: f{remaining}"
 
 
-# The URL api was Not tested recently (use with caution):
+# The playlist api was Not tested recently (use with caution):
 def all_urls_from_youtube_playlist(url_playlist: list[str]):
     playlist = Playlist(url_playlist)
     print("Number Of Videos In playlist: %s" % len(playlist.video_urls))
