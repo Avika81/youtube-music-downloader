@@ -44,7 +44,7 @@ def youtube2mp3(url: str, outdir: str) -> None:
         filename=filename,
         timeout=3,
     )
-    add_tag(filename, yt)
+    add_tag(os.path.join(outdir, filename), yt)
     return filename
 
 
