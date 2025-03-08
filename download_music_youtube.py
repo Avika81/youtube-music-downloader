@@ -1,5 +1,7 @@
 import functools
 from multiprocessing import Pool
+from random import randint
+import time
 from pytubefix import YouTube
 from pytubefix import Playlist
 from pathlib import Path
@@ -30,22 +32,40 @@ def yt_to_filename(yt):
     )
 
 
+def retry(f, attempts: int = 10):
+    @functools.wraps(f)
+    def inner(*args, **kwargs):
+        time.sleep(randint(0, 3))
+        for _ in range(attempts):
+            try:
+                return f(*args, **kwargs)
+            except Exception as e:
+                print(f"Failed: {f} - {args} {kwargs} - {repr(e)}")
+                time.sleep(10)
+        raise Exception(f"Failed: {f} - {args} {kwargs}")
+
+    return inner
+
+
+@retry
 def youtube2mp3(url: str, outdir: str) -> None:
     yt = YouTube(url, use_po_token=True)
-    try:
-        video = yt.streams.filter(only_audio=True).first()
-    except Exception:
-        print(f"Failed downloading: {url} - {yt.title}")
-        raise
-    destination = outdir or "."
     filename = yt_to_filename(yt=yt)
-    video.download(
-        output_path=destination,
+    yt.streams.filter(only_audio=True).first().download(
+        output_path=outdir,
         filename=filename,
-        timeout=3,
+        timeout=10,
     )
     add_tag(os.path.join(outdir, filename), yt)
     return filename
+
+
+def remove_empty_files(songs_to_download, outdir: str) -> None:
+    [
+        os.remove(os.path.join(outdir, name))
+        for name in os.listdir(outdir)
+        if os.stat(os.path.join(outdir, name)).st_size == 0
+    ]
 
 
 def remove_old(songs_to_download, outdir: str) -> None:
@@ -63,6 +83,7 @@ def missing(songs_to_download, outdir: str) -> dict:
 
 
 def sync_from_json(songs_dict: dict[str, str], outdir: str):
+    remove_empty_files(songs_dict, outdir=outdir)
     remove_old(songs_dict, outdir=outdir)
     new_songs = missing(songs_dict, outdir=outdir)
     with Pool(processes=16) as pool:
