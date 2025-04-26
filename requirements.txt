@@ -1,4 +1,5 @@
-pytubefix
+# pytubefix
+git+https://github.com/felipeucelli/pytubefix.git@new-player
 m3u-maker
 mutagen
 pathlib
