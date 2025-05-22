@@ -1,6 +1,9 @@
 import functools
 from multiprocessing import Pool
 from random import randint
+import shutil
+import tqdm
+from yt_dlp import YoutubeDL
 import time
 from pytubefix import YouTube
 from pytubefix import Playlist
@@ -8,7 +11,6 @@ from pathlib import Path
 import mutagen
 import os
 import os
-import tqdm
 
 
 def add_tag(file, yt):
@@ -47,16 +49,42 @@ def retry(f, attempts: int = 10):
     return inner
 
 
+def download(url, filename):
+    # This api is broken, downloading with YoutubeDL
+    # yt.streams.filter(only_audio=True).first().download(
+    #     output_path=outdir,
+    #     filename=filename,
+    #     timeout=10,
+    # )
+
+    # import IPython
+
+    # IPython.embed()
+    ydl_opts = {
+        "format": "bestaudio/best",
+        "extractaudio": True,  # Optional, already implied by next two
+        "audioformat": "mp3",  # Convert to mp3
+        "outtmpl": filename,
+        "quiet": True,
+        "postprocessors": [
+            {
+                "key": "FFmpegExtractAudio",
+                "preferredcodec": "mp3",
+                "preferredquality": "192",
+            }
+        ],
+    }
+    with YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
+    shutil.move(f"{filename.replace('.mp4','.mp3')}", filename)
+
+
 @retry
 def youtube2mp3(url: str, outdir: str) -> None:
     yt = YouTube(url, use_po_token=True)
-    filename = yt_to_filename(yt=yt)
-    yt.streams.filter(only_audio=True).first().download(
-        output_path=outdir,
-        filename=filename,
-        timeout=10,
-    )
-    add_tag(os.path.join(outdir, filename), yt)
+    filename = os.path.join(outdir, yt_to_filename(yt=yt))
+    download(url, filename=filename)
+    add_tag(filename, yt)
     return filename
 
 
@@ -86,6 +114,7 @@ def sync_from_json(songs_dict: dict[str, str], outdir: str):
     remove_empty_files(songs_dict, outdir=outdir)
     remove_old(songs_dict, outdir=outdir)
     new_songs = missing(songs_dict, outdir=outdir)
+    # [youtube2mp3(ns, outdir=outdir) for ns in new_songs.keys()] # for debugging
     with Pool(processes=16) as pool:
         res = pool.imap_unordered(
             functools.partial(youtube2mp3, outdir=outdir), new_songs.keys()
