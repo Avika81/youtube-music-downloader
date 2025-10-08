@@ -28,6 +28,8 @@ def main():
             remove_duplicates(songs_data)
             save(songs_data)
             sort_json()
+    else:
+        print(f"The song {url} already exists :)")
 
 
 if __name__ == "__main__":
