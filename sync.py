@@ -1,7 +1,11 @@
 import os
 import tqdm
 import json
-from download_music_youtube import sync_from_json, yt_to_filename, add_tag
+from download_music_youtube import (  # type: ignore
+    sync_from_json,
+    yt_to_filename,
+    add_tag,
+)
 from pytubefix import YouTube
 
 OUTDIR = r"C:\BackUp DOK\Extra\music\avi"
