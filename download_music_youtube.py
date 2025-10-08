@@ -12,11 +12,13 @@ import mutagen
 import os
 import os
 
+_DEBUG = True
+
 
 def add_tag(file, yt):
-    media_file = mutagen.File(file, easy=True)
-    media_file["artist"] = yt.author
-    media_file.save()
+    media_file = mutagen.File(file, easy=True)  # type: ignore
+    media_file["artist"] = yt.author  # type: ignore
+    media_file.save()  # type: ignore
 
 
 def yt_to_filename(yt):
@@ -31,12 +33,15 @@ def yt_to_filename(yt):
         .replace("\\", "-")
         .replace(":", " -")
         .replace("*", "")
+        .replace('"', "'")
     )
 
 
 def retry(f, attempts: int = 10):
     @functools.wraps(f)
     def inner(*args, **kwargs):
+        if _DEBUG:
+            return f(*args, **kwargs)
         time.sleep(randint(0, 3))
         for _ in range(attempts):
             try:
@@ -56,10 +61,6 @@ def download(url, filename):
     #     filename=filename,
     #     timeout=10,
     # )
-
-    # import IPython
-
-    # IPython.embed()
     ydl_opts = {
         "format": "bestaudio/best",
         "extractaudio": True,  # Optional, already implied by next two
@@ -80,7 +81,7 @@ def download(url, filename):
 
 
 @retry
-def youtube2mp3(url: str, outdir: str) -> None:
+def youtube2mp3(url: str, outdir: str) -> str:
     yt = YouTube(url, use_po_token=True)
     filename = os.path.join(outdir, yt_to_filename(yt=yt))
     download(url, filename=filename)
@@ -114,21 +115,23 @@ def sync_from_json(songs_dict: dict[str, str], outdir: str):
     remove_empty_files(songs_dict, outdir=outdir)
     remove_old(songs_dict, outdir=outdir)
     new_songs = missing(songs_dict, outdir=outdir)
-    # [youtube2mp3(ns, outdir=outdir) for ns in new_songs.keys()] # for debugging
-    with Pool(processes=16) as pool:
-        res = pool.imap_unordered(
-            functools.partial(youtube2mp3, outdir=outdir), new_songs.keys()
-        )
+    if _DEBUG:
+        [youtube2mp3(ns, outdir=outdir) for ns in new_songs.keys()]  # for _DEBUGging
+    else:
+        with Pool(processes=16) as pool:
+            res = pool.imap_unordered(
+                functools.partial(youtube2mp3, outdir=outdir), new_songs.keys()
+            )
 
-        for _ in tqdm.tqdm(res, total=len(new_songs)):
-            pass
+            for _ in tqdm.tqdm(res, total=len(new_songs)):
+                pass
     remaining = missing(songs_dict, outdir=outdir)
     assert not remaining, f"Failed to download everything, missing: f{remaining}"
 
 
 # The playlist api was Not tested recently (use with caution):
 def all_urls_from_youtube_playlist(url_playlist: list[str]):
-    playlist = Playlist(url_playlist)
+    playlist = Playlist(url_playlist)  # type: ignore
     print("Number Of Videos In playlist: %s" % len(playlist.video_urls))
 
     urls = []
