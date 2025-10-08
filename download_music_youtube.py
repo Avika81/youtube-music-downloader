@@ -12,7 +12,7 @@ import mutagen
 import os
 import os
 
-_DEBUG = True
+_DEBUG = False
 
 
 def add_tag(file, yt):
