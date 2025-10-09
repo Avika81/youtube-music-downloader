@@ -27,7 +27,7 @@ def yt_to_filename(yt):
         title = f"{yt.author} - {title}".replace(" - Topic", "")
 
     return (
-        f"{title}.mp4".replace("?", "")
+        f"{title}.mp3".replace("?", "")
         .replace("|", "-")
         .replace("/", "-")
         .replace("\\", "-")
